@@ -43,6 +43,19 @@ const Alert = ({ sensorData, darkMode }) => {
           falseStatus="AMAN"
           darkMode={darkMode}
         />
+        
+        {/* Gas  Sensor */}
+        <Sensor
+          sensorDetected={sensorData.fireDetected}
+          sensorName="Sensor Api"
+          icon={Flame}
+          alertType="red"
+          trueCondition="Api terdeteksi!"
+          falseCondition="Api tidak terdeteksi!"
+          trueStatus="BAHAYA"
+          falseStatus="AMAN"
+          darkMode={darkMode}
+        />
 
         {/* System Status */}
         {/* <SystemStatus data={sensorData} darkMode={darkMode} /> */}
