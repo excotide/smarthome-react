@@ -1,4 +1,4 @@
-import { AlertTriangle, Droplet, Droplets, Flame } from 'lucide-react';
+import { AlertTriangle, Droplet, Droplets, Flame, Wind } from 'lucide-react';
 import Sensor from './Sensor';
 
 const Alert = ({ sensorData, darkMode }) => {
@@ -46,12 +46,12 @@ const Alert = ({ sensorData, darkMode }) => {
         
         {/* Gas  Sensor */}
         <Sensor
-          sensorDetected={sensorData.fireDetected}
-          sensorName="Sensor Api"
-          icon={Flame}
+          sensorDetected={sensorData.gasDetected}
+          sensorName="Sensor Gas"
+          icon={Wind}
           alertType="red"
-          trueCondition="Api terdeteksi!"
-          falseCondition="Api tidak terdeteksi!"
+          trueCondition="Gas terdeteksi!"
+          falseCondition="Gas tidak terdeteksi!"
           trueStatus="BAHAYA"
           falseStatus="AMAN"
           darkMode={darkMode}

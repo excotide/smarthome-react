@@ -126,15 +126,15 @@ const Weather = ({
 
   if (!canFetch) {
     return (
-      <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-200 bg-white'}`}>
-        <h3 className="text-lg font-bold mb-2">Cuaca</h3>
-        <p>API key tidak ditemukan.</p>
-        <p>
+      <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-300 bg-white text-gray-900'}`}>
+        <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>Cuaca</h3>
+        <p className={darkMode ? 'text-slate-300' : 'text-gray-700'}>API key tidak ditemukan.</p>
+        <p className={darkMode ? 'text-slate-300' : 'text-gray-700'}>
           Tambahkan variable lingkungan:
-          <br />- <b>VITE_OPENWEATHER_API_KEY</b> (Vite)
-          <br />- atau <b>REACT_APP_OPENWEATHER_API_KEY</b> (CRA)
+          <br />- <b className={darkMode ? 'text-slate-100' : 'text-gray-900'}>VITE_OPENWEATHER_API_KEY</b> (Vite)
+          <br />- atau <b className={darkMode ? 'text-slate-100' : 'text-gray-900'}>REACT_APP_OPENWEATHER_API_KEY</b> (CRA)
         </p>
-        <p>Atau kirim prop apiKey ke komponen.</p>
+        <p className={darkMode ? 'text-slate-300' : 'text-gray-700'}>Atau kirim prop apiKey ke komponen.</p>
       </div>
     );
   }
@@ -146,12 +146,16 @@ const Weather = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari kota, misal: Bandung"
-          className={`flex-1 px-3 py-2 rounded-lg border outline-none ${darkMode ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder-slate-400' : 'border-gray-300 bg-white'}`}
+          className={`flex-1 px-3 py-2 rounded-lg border outline-none ${darkMode ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder-slate-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'}`}
         />
         <button
           onClick={() => setCity(query.trim())}
           disabled={loading || !query.trim()}
-          className="px-4 py-2 rounded-lg border border-blue-600 bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:opacity-60"
+          className={`px-4 py-2 rounded-lg border font-semibold transition disabled:opacity-60 ${
+            darkMode 
+              ? 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700' 
+              : 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
+          }`}
           title="Cari"
         >
           {loading ? "Memuat..." : "Cari"}
@@ -163,13 +167,13 @@ const Weather = ({
       ) : (
         <>
           {current && (
-            <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-200 bg-white'}`}>
+            <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-300 bg-white text-gray-900'}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold">
+                  <h3 className={`text-lg font-bold ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>
                     {current.name}, {current.sys?.country}
                   </h3>
-                  <div className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                  <div className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                     {current.weather?.[0]?.description ? capitalize(current.weather[0].description) : "-"}
                   </div>
                 </div>
@@ -183,7 +187,7 @@ const Weather = ({
               </div>
 
               <div className="mt-3 flex items-center gap-4">
-                <div className="text-4xl font-bold">{formatTemp(current.main?.temp ?? 0, units)}</div>
+                <div className={`text-4xl font-bold ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>{formatTemp(current.main?.temp ?? 0, units)}</div>
                 <div className={`grid gap-1 ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>
                   <div>Terasa: {formatTemp(current.main?.feels_like ?? 0, units)}</div>
                   <div>Kelembapan: {current.main?.humidity ?? "-"}%</div>
@@ -196,12 +200,12 @@ const Weather = ({
           )}
 
           {forecast?.length > 0 && (
-            <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-200 bg-white'}`}>
-              <h4 className="text-base font-bold mb-3">Perkiraan 5 Hari</h4>
+            <div className={`rounded-xl border shadow p-4 ${darkMode ? 'border-slate-600 bg-slate-800 text-slate-100' : 'border-gray-300 bg-white text-gray-900'}`}>
+              <h4 className={`text-base font-bold mb-3 ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>Perkiraan 5 Hari</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {forecast.map((d) => (
-                  <div key={d.dt} className={`border rounded-lg p-3 text-center ${darkMode ? 'border-slate-600 bg-slate-700' : 'border-gray-100 bg-gray-50'}`}>
-                    <div className="font-semibold mb-1">{formatDate(d.dt_txt ?? d.dt)}</div>
+                  <div key={d.dt} className={`border rounded-lg p-3 text-center ${darkMode ? 'border-slate-600 bg-slate-700 text-slate-100' : 'border-gray-300 bg-gray-50 text-gray-900'}`}>
+                    <div className={`font-semibold mb-1 ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>{formatDate(d.dt_txt ?? d.dt)}</div>
                     {d.weather?.[0]?.icon && (
                       <img
                         src={`https://openweathermap.org/img/wn/${d.weather[0].icon}.png`}
@@ -209,8 +213,8 @@ const Weather = ({
                         className="w-12 h-12 mx-auto"
                       />
                     )}
-                    <div className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-700'}`}>{d.weather?.[0]?.main || "-"}</div>
-                    <div className="mt-1 font-medium">
+                    <div className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>{d.weather?.[0]?.main || "-"}</div>
+                    <div className={`mt-1 font-medium ${darkMode ? 'text-slate-100' : 'text-gray-900'}`}>
                       <span>{formatTemp(d.main?.temp_min ?? d.main?.temp ?? 0, units)}</span>
                       <span> / </span>
                       <span>{formatTemp(d.main?.temp_max ?? d.main?.temp ?? 0, units)}</span>

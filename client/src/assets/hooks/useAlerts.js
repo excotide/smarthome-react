@@ -5,14 +5,14 @@ const useAlerts = (sensorData) => {
 
   useEffect(() => {
     const newAlerts = [];
-    if (sensorData.fireDetected) {
-      newAlerts.push({ type: 'danger', message: 'BAHAYA! Terdeteksi Api/Asap!' });
+    if (sensorData.fireDetected || sensorData.gasDetected) {
+      newAlerts.push({ type: 'danger', message: 'BAHAYA! Terdeteksi Api/Gas!' });
     }
     if (sensorData.rainDetected) {
       newAlerts.push({ type: 'warning', message: 'Hujan Terdeteksi' });
     }
     setAlerts(newAlerts);
-  }, [sensorData.fireDetected, sensorData.rainDetected]);
+  }, [sensorData.fireDetected, sensorData.gasDetected, sensorData.rainDetected]);
 
   return alerts;
 };

@@ -76,8 +76,10 @@ void loop() {
   if (flameState == LOW || mq2State == LOW) {
     for (int i = 0; i < 3; i++) {
       tone(buzzerPin, 1000);
+      digitalWrite(rainLedPin, HIGH);
       delay(300);
       noTone(buzzerPin);
+      digitalWrite(rainLedPin, LOW);
       delay(200);
     }
   } else if (rainState == LOW) {

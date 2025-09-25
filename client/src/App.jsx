@@ -88,7 +88,7 @@ function App() {
 
     if (activeNav === 'history') {
       return (
-        <History darkMode={darkMode}/>
+        <History darkMode={darkMode} sensorData={sensorData}/>
       );
     }
 
