@@ -4,8 +4,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import sensorRoutes from "./routes/sensorRoutes.js";
-import historyRoutes from "./routes/historyRoutes.js";
-import { runMaintenanceTasks } from "./utils/historyMaintenance.js";
+import lampRoutes from "./routes/lampRoutes.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -26,7 +25,7 @@ app.use((req, res, next) => {
 // routes
 app.use("/api/sensor", sensorRoutes);
 app.use("/api/sensors", sensorRoutes);
-app.use("/api/history", historyRoutes);
+app.use("/api/lamp", lampRoutes)
 
 // koneksi database
 mongoose
@@ -44,12 +43,4 @@ io.on("connection", (socket) => {
 const PORT = 3000;
 server.listen(PORT, () => {
   console.log("Server running on http://localhost:" + PORT);
-  
-  // Jalankan maintenance tasks saat startup
-  runMaintenanceTasks();
-  
-  // Schedule maintenance tasks setiap 24 jam
-  setInterval(() => {
-    runMaintenanceTasks();
-  }, 24 * 60 * 60 * 1000); // 24 jam dalam milliseconds
 });

@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Lightbulb, Home, Thermometer, Droplets, Flame, Activity, AlertTriangle, Wifi, Power, Menu, X, BarChart3, Settings, Clock, Wind, Sun, Moon } from 'lucide-react';
-import './App.css';
 
 // pages & components
-import StatusCard from './assets/components/StatusCard';
 import Navbar from './assets/components/Navbar';
 import Header from './assets/components/Header';
-import ControlPanel from './assets/components/ControlPanel';
-import SettingsPanel from './assets/components/SettingPanel';
-import History from './assets/components/History';
+import ControlPanel from './assets/pages/ControlPanel';
+import History from './assets/pages/History';
 import Alert from './assets/components/Alert';
 import AlertNotifications from './assets/components/AlertNotifications';
 import Weather from './assets/pages/Weather';
+
+// pages
+import Sensor from './assets/pages/Sensor';
 
 // hooks
 import useDarkMode from './assets/hooks/useDarkMode';
@@ -20,69 +19,23 @@ import useAlerts from './assets/hooks/useAlerts';
 
 function App() {
   const [darkMode, toggleDarkMode] = useDarkMode();
-  const [sensorData, setSensorData] = useSensorData();
+  const sensorData = useSensorData();
   const alerts = useAlerts(sensorData);
 
   const [activeNav, setActiveNav] = useState('sensor');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const toggleLamp = () => {
-    setSensorData(prev => ({
-      ...prev,
-      lampStatus: !prev.lampStatus
-    }));
-  };
 
   const renderContent = () => {
     if (activeNav === 'sensor') {
       return (
-        <>
-          {/* Status Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatusCard
-              title="Flame"
-              value={`${sensorData.fireDetected ? 'DETECTED' : 'CLEAR'}`}
-              icon={Flame}
-              colorClass="red"
-              isDark={darkMode}
-            />
-            <StatusCard
-              title="Gas"
-              value={`${sensorData.gasDetected ? 'DETECTED' : 'CLEAR'}`}
-              icon={Wind}
-              colorClass="blue"
-              isDark={darkMode}
-            />
-            <StatusCard
-              title="Tingkat Cahaya"
-              value={`${sensorData.lightLevel.toFixed(0)}%`}
-              icon={Activity}
-              status={sensorData.lightLevel < 30 ? 'LOW' : 'NORMAL'}
-              colorClass="yellow"
-              isDark={darkMode}
-            />
-            <StatusCard
-              title="Status Lampu"
-              value="Lampu Utama"
-              icon={Lightbulb}
-              status={sensorData.lampStatus ? 'ON' : 'OFF'}
-              colorClass={sensorData.lampStatus ? 'green' : 'gray'}
-              isDark={darkMode}
-            />
-          </div>
-
-          {/* Alert System */}
-          <Alert sensorData={sensorData} darkMode={darkMode} />
-        </>
+          <Sensor darkMode={darkMode} sensorData={sensorData}/>
       );
     }
 
     if (activeNav === 'control') {
       return (
-        <div className="dashboard-grid grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <ControlPanel sensorData={sensorData} toggleLamp={toggleLamp} darkMode={darkMode}/>
-          <SettingsPanel darkMode={darkMode}/>
-        </div>
+        <ControlPanel sensorData={sensorData} darkMode={darkMode}/>
       );
     }
 
