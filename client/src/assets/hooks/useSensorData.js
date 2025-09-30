@@ -159,6 +159,29 @@ const useSensorData = () => {
         applyServerData(payload);
       });
 
+      // Realtime ringan: setiap pesan sensor dari MQTT
+      socket.on('sensor_live', (payload) => {
+        if (!payload) return;
+        setSensorData((prev) => {
+          const lux = typeof payload.lux === 'number' ? payload.lux : Number(payload.lux);
+          const nextLight = luxToPercent(lux);
+          // Ikuti biner jika ikut terkirim, jika tidak, pertahankan sebelumnya
+          const rainDetected = payload.rain != null ? Number(payload.rain) === 0 : prev.rainDetected;
+          const fireDetected = payload.flame != null ? Number(payload.flame) === 0 : prev.fireDetected;
+          const gasDetected = payload.mq2 != null ? Number(payload.mq2) === 0 : prev.gasDetected;
+          const motionDetected = prev.motionDetected;
+
+          return {
+            ...prev,
+            lightLevel: nextLight,
+            gasDetected,
+            rainDetected,
+            fireDetected,
+            // lampStatus di UI utama tetap berasal dari event khusus lamp_update atau logika lokal jika diperlukan
+          };
+        });
+      });
+
       socket.on('lamp_update', (payload) => {
         console.log('[socket] Lamp update received:', payload);
         setSensorData((prev) => ({

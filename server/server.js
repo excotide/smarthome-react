@@ -6,6 +6,7 @@ import cors from "cors";
 import mqtt from "mqtt"; // Tambahkan library MQTT
 import sensorRoutes from "./routes/sensorRoutes.js";
 import lampRoutes from "./routes/lampRoutes.js";
+import Sensor from "./models/Sensor.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -71,22 +72,41 @@ mqttClient.on("connect", () => {
 });
 
 // Ketika pesan diterima dari broker MQTT
-mqttClient.on("message", (topic, message) => {
+mqttClient.on("message", async (topic, message) => {
   if (topic === "arduino/sensors") {
-    console.log("📩 Data diterima dari topik arduino/sensors:", message.toString());
+    const payload = message.toString();
+    console.log("📩 Data diterima dari topik arduino/sensors:", payload);
+    try {
+      const data = JSON.parse(payload);
+      const flame = Number(data.flame);
+      const mq2 = Number(data.mq2);
+      const rain = Number(data.rain);
+      const lux = typeof data.lux === 'number' ? data.lux : Number(data.lux);
 
-    // Emit data ke semua client melalui Socket.IO
-    io.emit("sensor_update", JSON.parse(message.toString()));
+      // Emit realtime (ringan) untuk semua update agar UI bisa refresh tingkat cahaya tanpa spam DB
+      io.emit("sensor_live", {
+        flame,
+        mq2,
+        rain,
+        lux,
+        createdAt: new Date().toISOString(),
+      });
 
-    // Simpan data ke database jika diperlukan
-    // Contoh: Simpan ke MongoDB
-    /*
-    const sensorData = JSON.parse(message.toString());
-    const newSensorData = new SensorModel(sensorData);
-    newSensorData.save()
-      .then(() => console.log("Data sensor disimpan ke database"))
-      .catch((err) => console.error("Gagal menyimpan data sensor:", err));
-    */
+      // Dedup: hanya simpan jika ada perubahan pada sensor biner (flame/mq2/rain)
+      const last = await Sensor.findOne().sort({ createdAt: -1 });
+      const sameBinary = last && Number(last.flame) === flame && Number(last.mq2) === mq2 && Number(last.rain) === rain;
+      if (sameBinary) {
+        // Abaikan update jika tidak ada perubahan biner
+        return;
+      }
+
+      const doc = new Sensor({ flame, mq2, rain, lux });
+      const saved = await doc.save();
+      console.log("✅ Data sensor disimpan ke database (perubahan biner)");
+      io.emit("sensor_update", saved);
+    } catch (e) {
+      console.error("❌ Gagal parse/simpan payload sensor:", e);
+    }
   } else if (topic === "arduino/controlManual/state") {
     const val = message.toString();
     const enabled = val.toUpperCase() === "ON" || val === "1" || val.toLowerCase() === "true";
