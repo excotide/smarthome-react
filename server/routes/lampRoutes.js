@@ -1,75 +1,113 @@
 import express from 'express';
-import Sensor from '../models/Sensor.js';
+import mqtt from 'mqtt';
 
 const router = express.Router();
 
-// Variable to store lamp status (in real app, this would be in database)
+// Konfigurasi broker HiveMQ
+const mqttClient = mqtt.connect('mqtts://48378e59b49d4cfeadc19503175e8732.s1.eu.hivemq.cloud', {
+  port: 8883, // Port untuk koneksi TLS/SSL
+  username: 'excotide', // Ganti dengan username HiveMQ Anda
+  password: 'Smarthome123', // Ganti dengan password HiveMQ Anda
+});
+
+mqttClient.on('connect', () => {
+  console.log('Connected to HiveMQ broker');
+});
+
+// Variable untuk menyimpan status lampu
 let lampStatus = false;
 
-// POST toggle lamp
+// Endpoint untuk toggle lampu tetap dipertahankan
 router.post('/toggle', async (req, res) => {
   try {
     const { currentStatus } = req.body;
-    
-    // Toggle status
     const newStatus = !currentStatus;
-    lampStatus = newStatus; // Update local status
-    
+    lampStatus = newStatus;
+
     console.log(`Toggling lamp from ${currentStatus} to ${newStatus}`);
-    
+
+    // Kirim perintah ke Arduino melalui MQTT
+    const command = newStatus ? 'LAMP_ON' : 'LAMP_OFF';
+    mqttClient.publish('arduino/lamp', command, (err) => {
+      if (err) {
+        console.error('Error publishing to MQTT:', err);
+        return res.status(500).json({ error: 'Failed to send command to Arduino' });
+      }
+      console.log(`Command sent to Arduino via MQTT: ${command}`);
+    });
+
     // Emit update ke semua client via Socket.IO
-    const io = req.io; // Access io from middleware
+    const io = req.io;
     if (io) {
-      // Emit lamp update
-      io.emit('lamp_update', { 
+      io.emit('lamp_update', {
         lampStatus: newStatus,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Emit sebagai sensor update juga
-      io.emit('sensor_update', { 
-        lampStatus: newStatus,
-        updatedAt: new Date()
+        timestamp: new Date().toISOString(),
       });
     }
-    
-    // Simulasi command ke hardware (Arduino/ESP32)
-    // await sendCommandToHardware('LAMP_TOGGLE', newStatus);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: `Lamp turned ${newStatus ? 'ON' : 'OFF'}`,
       status: newStatus,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
   } catch (error) {
     console.error('Error toggling lamp:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to toggle lamp',
-      message: error.message 
-    });
+    res.status(500).json({ error: 'Failed to toggle lamp' });
   }
 });
 
-// GET current lamp status
-router.get('/status', async (req, res) => {
-  try {
-    // Return current lamp status
-    res.json({
-      success: true,
-      lampStatus: lampStatus,
-      timestamp: new Date().toISOString()
+// Endpoint untuk mengatur kontrol manual
+router.post('/controlManual', (req, res) => {
+  console.log('Endpoint /controlManual hit');
+  const { command } = req.body; // command: "MANUAL_ON" atau "MANUAL_OFF"
+  console.log(`Received controlManual command: ${command}`);
+  if (command === 'MANUAL_ON' || command === 'MANUAL_OFF') {
+  mqttClient.publish('arduino/controlManual', command, { qos: 1, retain: true }, (err) => {
+      if (err) {
+        console.error('Error publishing to MQTT:', err);
+        return res.status(500).json({ error: 'Failed to send command to Arduino' });
+      }
+      console.log(`Command sent to Arduino: ${command}`);
+      // Emit ke semua client tentang perubahan status kontrol manual
+      const io = req.io;
+      if (io) {
+        io.emit('control_manual_update', {
+          controlManual: command === 'MANUAL_ON',
+          timestamp: new Date().toISOString(),
+        });
+      }
+      res.json({ success: true, message: `Control manual set to ${command}` });
     });
-    
-  } catch (error) {
-    console.error('Error getting lamp status:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to get lamp status',
-      message: error.message
+  } else {
+    res.status(400).json({ error: 'Invalid command' });
+  }
+});
+
+// Alias agar mount di "/api/controlManual" langsung menembak endpoint ini
+router.post('/', (req, res) => {
+  console.log('Endpoint / (alias controlManual) hit');
+  const { command } = req.body; // command: "MANUAL_ON" atau "MANUAL_OFF"
+  console.log(`Received controlManual command via alias: ${command}`);
+  if (command === 'MANUAL_ON' || command === 'MANUAL_OFF') {
+  mqttClient.publish('arduino/controlManual', command, { qos: 1, retain: true }, (err) => {
+      if (err) {
+        console.error('Error publishing to MQTT:', err);
+        return res.status(500).json({ error: 'Failed to send command to Arduino' });
+      }
+      console.log(`Command sent to Arduino: ${command}`);
+      // Emit ke semua client tentang perubahan status kontrol manual
+      const io = req.io;
+      if (io) {
+        io.emit('control_manual_update', {
+          controlManual: command === 'MANUAL_ON',
+          timestamp: new Date().toISOString(),
+        });
+      }
+      res.json({ success: true, message: `Control manual set to ${command}` });
     });
+  } else {
+    res.status(400).json({ error: 'Invalid command' });
   }
 });
 
