@@ -13,7 +13,7 @@ const Navbar = ({ activeNav, setActiveNav, mobileMenuOpen, isDarkMode }) => {
           onClick={() => setActiveNav('sensor')}
         >
           <BarChart3 size={20} />
-          <span>Sensor</span>
+          <span>Dashboard</span>
         </button>
         <button
           className={`flex items-center gap-2 py-4 px-6 font-medium transition border-b-4 ${

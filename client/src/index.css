@@ -1,6 +1,10 @@
 @import "tailwindcss";
-
 /* App.css - Minimal custom styles (99% Tailwind) */
+
+/* Apply Poppins globally */
+html {
+  font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+}
 
 /* Essential theme gradients (can't be replicated exactly with Tailwind utilities) */
 .light-theme {

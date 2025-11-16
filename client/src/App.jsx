@@ -8,6 +8,7 @@ import History from './assets/pages/History';
 import Alert from './assets/components/Alert';
 import AlertNotifications from './assets/components/AlertNotifications';
 import Weather from './assets/pages/Weather';
+import Login from './assets/pages/Login'; // ⭐ PERBAIKAN PATH
 
 // pages
 import Sensor from './assets/pages/Sensor';
@@ -24,7 +25,22 @@ function App() {
 
   const [activeNav, setActiveNav] = useState('sensor');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // ⭐ STATE LOGIN
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // ⭐ CEK LOGIN STATUS
+  useEffect(() => {
+    const user = localStorage.getItem('smarthome_user');
+    if (user) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // ⭐ JIKA BELUM LOGIN, TAMPILKAN HALAMAN LOGIN
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+  }
 
   const renderContent = () => {
     if (activeNav === 'sensor') {
