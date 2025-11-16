@@ -8,6 +8,7 @@ import History from './assets/pages/History';
 import Alert from './assets/components/Alert';
 import AlertNotifications from './assets/components/AlertNotifications';
 import Weather from './assets/pages/Weather';
+import LandingPage from './assets/pages/LandingPage';
 
 // pages
 import Sensor from './assets/pages/Sensor';
@@ -53,32 +54,30 @@ function App() {
   };
 
   return (
-    <div className={`app ${darkMode ? 'dark-theme' : 'light-theme'} dark:bg-slate-900 dark:text-slate-50 bg-gray-50 min-h-screen transition-all`}>
+    <>
       {/* Header */}
-      <Header
+      {/* <Header
         toggleDarkMode={toggleDarkMode}
         darkMode={darkMode}
         sensorData={sensorData}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
-      />
+      /> */}
 
       {/* Navbar */}
-      <Navbar
+      {/* <Navbar
         activeNav={activeNav}
         setActiveNav={setActiveNav}
         mobileMenuOpen={mobileMenuOpen}
         isDarkMode={darkMode}
-      />
+      /> */}
 
       <div className="main-container max-w-7xl mx-auto px-4 py-8">
         {/* Alert Notifications */}
         <AlertNotifications alerts={alerts} darkMode={darkMode} />
-
-        {/* Dynamic Content Based on Active Nav */}
-        {renderContent()}
+        {/* {renderContent()} */}
       </div>
-    </div>
+    </>
   );
 }
 

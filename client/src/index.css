@@ -1,6 +1,10 @@
 @import "tailwindcss";
-
 /* App.css - Minimal custom styles (99% Tailwind) */
+
+/* Apply Poppins globally */
+html {
+  font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+}
 
 /* Essential theme gradients (can't be replicated exactly with Tailwind utilities) */
 .light-theme {
@@ -49,6 +53,20 @@
     visibility: visible;
   }
 
+    /* Subtle grid overlay (light/dark variants) */
+    .grid-overlay-light {
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .grid-overlay-dark {
+      background-image:
+        linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
   .nav-menu button {
     border-bottom: 1px solid #e5e7eb !important;
     justify-content: flex-start !important;
