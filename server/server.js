@@ -6,6 +6,7 @@ import cors from "cors";
 import mqtt from "mqtt"; // Tambahkan library MQTT
 import sensorRoutes from "./routes/sensorRoutes.js";
 import lampRoutes from "./routes/lampRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import Sensor from "./models/Sensor.js";
 
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/sensor", sensorRoutes);
 app.use("/api/sensors", sensorRoutes);
 app.use("/api/lamp", lampRoutes);
 app.use("/api/controlManual", lampRoutes);
+app.use("/api/users", userRoutes);
 
 // koneksi database
 mongoose
