@@ -53,6 +53,20 @@ html {
     visibility: visible;
   }
 
+    /* Subtle grid overlay (light/dark variants) */
+    .grid-overlay-light {
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px),
+        linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .grid-overlay-dark {
+      background-image:
+        linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
   .nav-menu button {
     border-bottom: 1px solid #e5e7eb !important;
     justify-content: flex-start !important;
