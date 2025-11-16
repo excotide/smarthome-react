@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "animate.css": "^4.1.1",
     "autoprefixer": "^10.4.21",
     "lucide-react": "^0.544.0",
     "postcss": "^8.5.6",

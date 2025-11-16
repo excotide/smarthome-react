@@ -32,7 +32,7 @@ const Alert = ({ sensorData, darkMode }) => {
         />
 
         {/* Fire Sensor */}
-        <Sensor
+        {/* <Sensor
           sensorDetected={sensorData.fireDetected}
           sensorName="Sensor Api"
           icon={Flame}
@@ -42,10 +42,10 @@ const Alert = ({ sensorData, darkMode }) => {
           trueStatus="BAHAYA"
           falseStatus="AMAN"
           darkMode={darkMode}
-        />
+        /> */}
         
         {/* Gas  Sensor */}
-        <Sensor
+        {/* <Sensor
           sensorDetected={sensorData.gasDetected}
           sensorName="Sensor Gas"
           icon={Wind}
@@ -55,7 +55,7 @@ const Alert = ({ sensorData, darkMode }) => {
           trueStatus="BAHAYA"
           falseStatus="AMAN"
           darkMode={darkMode}
-        />
+        /> */}
 
         {/* System Status */}
         {/* <SystemStatus data={sensorData} darkMode={darkMode} /> */}

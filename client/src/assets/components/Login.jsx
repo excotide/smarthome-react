@@ -71,6 +71,18 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden">
 
+      {/* Tombol kembali ke Landing Page */}
+      <button
+        onClick={() => {
+          localStorage.removeItem('smarthome_user');
+          localStorage.removeItem('loggedIn');
+          window.location.href = '/';
+        }}
+        className="absolute top-5 left-6 px-4 py-2 rounded-full border border-zinc-100/70 text-zinc-100 hover:bg-zinc-100/10 transition z-20"
+      >
+        Kembali
+      </button>
+
       {/* LOGIN FORM */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">

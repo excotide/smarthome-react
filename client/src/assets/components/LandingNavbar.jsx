@@ -12,14 +12,30 @@ const LandingNavbar = () => {
                 <li><a href="#about" onClick={() => setOpen(false)} className="text-zinc-800 text-4xl font-bold">About</a></li>
                 <li><a href="#project" onClick={() => setOpen(false)} className="text-zinc-800 text-4xl font-bold">Project</a></li>
                 <li><a href="#contact" onClick={() => setOpen(false)} className="text-zinc-800 text-4xl font-bold">Contact</a></li>
-                <li className="mt-4"><a href="/login" onClick={() => setOpen(false)} className="px-5 py-2 rounded-full border border-zinc-800 text-zinc-800 hover:bg-zinc-800 hover:text-white transition">Login</a></li>
+                                <li className="mt-4">
+                                    <button
+                                        onClick={() => {
+                                            // Simulasi login sederhana: set flag dan kirim event
+                                            localStorage.setItem('loggedIn','true')
+                                            window.dispatchEvent(new Event('auth:login'))
+                                            setOpen(false)
+                                        }}
+                                        className="px-5 py-2 rounded-full border border-zinc-800 text-zinc-800 hover:bg-zinc-800 hover:text-white transition"
+                                    >Login</button>
+                                </li>
             </ul>
         </div>
         <nav className={`${open ? 'bg-zinc-800/80' : 'bg-zinc-200/10' } navbar py-5 fixed top-0 backdrop-blur-md left-0 w-full z-50`}>
             <div className="flex items-center justify-between mx-12 relative">
                 <span className="font-bold text-3xl">SmartHome</span>
                 <div className="flex items-center gap-4">
-                    <a href="/login" className="hidden md:inline-block px-4 py-2 rounded-full border border-zinc-100/70 text-zinc-100 hover:bg-zinc-100/10 transition">Login</a>
+                                        <button
+                                            onClick={() => {
+                                                localStorage.setItem('loggedIn','true')
+                                                window.dispatchEvent(new Event('auth:login'))
+                                            }}
+                                            className="hidden md:inline-block px-4 py-2 rounded-full border border-zinc-100/70 text-zinc-100 hover:bg-zinc-100/10 transition"
+                                        >Login</button>
                     <button onClick={() => setOpen(!open)} className="flex flex-col gap-2 z-50 relative">
                     <span className="bg-zinc-100 w-8 h-1.5 rounded-2xl block"></span>
                     <span className="bg-zinc-100 w-8 h-1.5 rounded-2xl block"></span>
