@@ -3,152 +3,131 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:3000');
 
-const History = ({ data, darkMode = false }) => {
-  const [sensorData, setSensorData] = useState([]);
-  const [initialized, setInitialized] = useState(false);
-  const LIMIT = 10;
+const History = ({ darkMode = false }) => {
+  const [events, setEvents] = useState([]);
+  const [durations, setDurations] = useState({ flame: [], gas: [], rain: [] });
+  const [loading, setLoading] = useState(false);
+  const LIMIT = 50;
 
-  // Helper: kompres daftar agar hanya menyimpan transisi biner (flame/mq2/rain)
-  const compressBinaryTransitions = (list) => {
-    if (!Array.isArray(list)) return [];
-    const out = [];
-    let last = null;
-    for (const row of list) {
-      const cur = {
-        f: Number(row?.flame),
-        m: Number(row?.mq2),
-        r: Number(row?.rain),
-      };
-      if (!last || cur.f !== last.f || cur.m !== last.m || cur.r !== last.r) {
-        out.push(row);
-        last = cur;
-      }
-      if (out.length >= LIMIT) break;
-    }
-    return out;
-  };
-
-  // Helper: ubah 0/1 jadi label deteksi berwarna per sensor
-  const detectionNode = (v, type) => {
-    if (v === null || v === undefined) return <span>-</span>;
-    const detected = Number(v) === 0;
-    let label = detected ? 'terdeteksi' : 'tidak terdeteksi';
-    switch (type) {
-      case 'flame':
-        label = detected ? 'Api terdeteksi' : 'Tidak ada api';
-        break;
-      case 'mq2':
-        label = detected ? 'Gas/Asap terdeteksi' : 'Tidak ada gas/asap';
-        break;
-      case 'rain':
-        label = detected ? 'Hujan' : 'Tidak hujan';
-        break;
-      default:
-        break;
-    }
-    const color = detected ? 'text-red-500' : 'text-green-500';
-    return <span className={`${color} font-medium`}>{label}</span>;
-  };
-
-  // Fetch data dari API jika tidak ada props data
-  useEffect(() => {
-    const initFromPropsOrFetch = async () => {
-      if (!data) {
-        await fetchSensorData();
-      } else {
-        const filtered = compressBinaryTransitions(data);
-        setSensorData(filtered);
-        setInitialized(true);
-      }
-    };
-    initFromPropsOrFetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
-
-  // Subscribe realtime update dari server (aktif setelah initialized)
-  useEffect(() => {
-    const onUpdate = (doc) => {
-      if (!doc || !initialized) return; // tunda sampai data awal siap
-      setSensorData((prev) => {
-        const last = prev[0];
-        const sameBinary = last &&
-          Number(last.flame) === Number(doc.flame) &&
-          Number(last.mq2) === Number(doc.mq2) &&
-          Number(last.rain) === Number(doc.rain);
-        if (sameBinary) return prev; // abaikan update yang sama
-        return [doc, ...prev].slice(0, LIMIT);
-      });
-    };
-
-    socket.on('sensor_update', onUpdate);
-    return () => {
-      socket.off('sensor_update', onUpdate);
-    };
-  }, [initialized]);
-
-  const fetchSensorData = async () => {
+  const fetchHistory = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sensors?limit=${LIMIT * 3}`); // ambil lebih banyak lalu kompres
-      if (response.ok) {
-        const result = await response.json();
-        const filtered = compressBinaryTransitions(result);
-        setSensorData(filtered);
-        setInitialized(true);
-      } else {
-        setSensorData([]);
-        setInitialized(true);
-      }
-    } catch (error) {
-      console.error('Error fetching sensor data:', error);
-      setSensorData([]);
-      setInitialized(true);
+      setLoading(true);
+      const res = await fetch(`http://localhost:3000/api/history?limit=${LIMIT}&window=${LIMIT * 3}`);
+      if (!res.ok) throw new Error('Failed to fetch history');
+      const json = await res.json();
+      setEvents(Array.isArray(json.events) ? json.events : []);
+      const durs = json.durations || {};
+      setDurations({
+        flame: Array.isArray(durs.flame) ? durs.flame : [],
+        gas: Array.isArray(durs.gas) ? durs.gas : [],
+        rain: Array.isArray(durs.rain) ? durs.rain : [],
+      });
+    } catch (e) {
+      console.error('Error fetching history:', e);
+      setEvents([]);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  // Refresh history setiap ada perubahan sensor_update
+  useEffect(() => {
+    const onUpdate = () => fetchHistory();
+    socket.on('sensor_update', onUpdate);
+    return () => socket.off('sensor_update', onUpdate);
+  }, []);
 
   const panelBase = 'panel rounded-xl shadow p-6 border';
   const panelTheme = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-transparent';
   const headerText = darkMode ? 'text-slate-50' : 'text-slate-900';
   const subText = darkMode ? 'text-slate-200' : 'text-gray-500';
-  const tableHead = darkMode ? 'bg-slate-700 text-slate-200' : 'bg-gray-50 text-slate-600';
-  const tableRowOdd = darkMode ? 'odd:bg-white/5 even:bg-transparent' : 'odd:bg-gray-50 even:bg-transparent';
-  const tableCell = darkMode ? 'text-slate-100' : 'text-slate-700';
+  const itemBase = 'rounded-xl border p-4 flex items-start gap-3';
+  const toColor = (type) => {
+    if (type === 'danger') return darkMode ? 'bg-red-900/30 border-red-700 text-red-100' : 'bg-red-50 border-red-200 text-red-800';
+    if (type === 'warning') return darkMode ? 'bg-amber-900/30 border-amber-700 text-amber-100' : 'bg-amber-50 border-amber-200 text-amber-800';
+    if (type === 'success') return darkMode ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-50 border-emerald-200 text-emerald-800';
+    return darkMode ? 'bg-slate-700/40 border-slate-600 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-700';
+  };
+
+  // Build unified session cards from durations
+  const sessions = [
+    ...durations.flame.map(s => ({ ...s, field: 'flame', label: 'Api' })),
+    ...durations.gas.map(s => ({ ...s, field: 'gas', label: 'Gas' })),
+    ...durations.rain.map(s => ({ ...s, field: 'rain', label: 'Hujan' })),
+  ]
+    .sort((a,b) => new Date(b.start).getTime() - new Date(a.start).getTime()) // newest first
+    .slice(0, 30); // limit cards
+  // Pagination (slider) untuk sesi: tampilkan 3 per halaman
+  const pageSize = 3;
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(sessions.length / pageSize);
+  const visibleSessions = sessions.slice(page * pageSize, page * pageSize + pageSize);
+  useEffect(() => { setPage(0); }, [sessions.length]);
+  // Warna khusus per jenis: Api merah, Gas kuning, Hujan biru
+  const cardColor = (field) => {
+    switch(field) {
+      case 'flame': // merah
+        return darkMode ? 'bg-red-900/40 border-red-700 text-red-100' : 'bg-red-50 border-red-300 text-red-800';
+      case 'gas': // kuning
+        return darkMode ? 'bg-yellow-900/40 border-yellow-700 text-yellow-100' : 'bg-yellow-50 border-yellow-300 text-yellow-800';
+      case 'rain': // biru
+        return darkMode ? 'bg-blue-900/40 border-blue-700 text-blue-100' : 'bg-blue-50 border-blue-300 text-blue-800';
+      default:
+        return darkMode ? 'bg-slate-700/40 border-slate-600 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-700';
+    }
+  };
 
   return (
     <div className={`${panelBase} ${panelTheme}`}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className={`text-xl font-bold ${headerText}`}>Riwayat Terbaru</h2>
-        <span className={`text-sm ${subText}`}>{sensorData.length} entri</span>
+        <h2 className={`text-xl font-bold ${headerText}`}>Riwayat Perubahan</h2>
+        <div className="flex items-center gap-3">
+          <button onClick={fetchHistory} className={`text-sm underline ${subText}`}>Refresh</button>
+          <span className={`text-sm ${subText}`}>{loading ? 'Memuat...' : `${events.length} entri`}</span>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-transparent">
-        <table className="min-w-full text-sm">
-          <thead className={tableHead}>
-            <tr>
-              <th className="px-3 py-2 text-left">Waktu</th>
-              <th className="px-3 py-2 text-center">Flame</th>
-              <th className="px-3 py-2 text-center">MQ2</th>
-              <th className="px-3 py-2 text-center">Rain</th>
-            </tr>
-          </thead>
-          <tbody className={tableRowOdd}>
-            {sensorData.length === 0 ? (
-              <tr>
-                <td colSpan={4} className={`px-3 py-4 text-center ${tableCell}`}>Belum ada data</td>
-              </tr>
-            ) : (
-              sensorData.map((row, i) => (
-                <tr key={row._id || i}>
-                  <td className={`px-3 py-2 ${tableCell}`}>
-                    {row.createdAt ? new Date(row.createdAt).toLocaleString() : '-'}
-                  </td>
-                  <td className={`px-3 py-2 text-center ${tableCell}`}>{detectionNode(row.flame, 'flame')}</td>
-                  <td className={`px-3 py-2 text-center ${tableCell}`}>{detectionNode(row.mq2, 'mq2')}</td>
-                  <td className={`px-3 py-2 text-center ${tableCell}`}>{detectionNode(row.rain, 'rain')}</td>
-                </tr>
-              ))
+      {/* Cards sesi deteksi */}
+      <div className="mt-2">
+        <h3 className={`text-lg font-semibold mb-4 ${headerText}`}>Sesi Deteksi Terbaru</h3>
+        {sessions.length === 0 ? (
+          <p className={`${subText}`}>Belum ada sesi terdeteksi.</p>
+        ) : (
+          <>
+            <div className="flex flex-col gap-4">
+              {visibleSessions.map((s, i) => (
+                <div key={i} className={`rounded-2xl border p-4 flex flex-col gap-2 ${cardColor(s.field)} backdrop-blur-xl transition-all`}>                
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">{s.label}</span>
+                    {s.ongoing && <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500 text-white">Berjalan</span>}
+                  </div>
+                  <div className="text-xs opacity-80">Mulai: {s.start ? new Date(s.start).toLocaleString() : '-'}</div>
+                  {!s.ongoing && <div className="text-xs opacity-80">Selesai: {s.end ? new Date(s.end).toLocaleString() : '-'}</div>}
+                  <div className="text-sm font-medium">Durasi: {s.durationText}</div>
+                </div>
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setPage(p => p - 1)}
+                  disabled={page === 0}
+                  className={`px-3 py-1 rounded-lg text-sm border ${page === 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-200/40 dark:hover:bg-slate-700/40'} ${darkMode ? 'border-slate-600 text-slate-200' : 'border-slate-300 text-slate-700'}`}
+                >Prev</button>
+                <span className={`text-xs ${subText}`}>{page + 1} / {totalPages}</span>
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={page === totalPages - 1}
+                  className={`px-3 py-1 rounded-lg text-sm border ${page === totalPages - 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-200/40 dark:hover:bg-slate-700/40'} ${darkMode ? 'border-slate-600 text-slate-200' : 'border-slate-300 text-slate-700'}`}
+                >Next</button>
+              </div>
             )}
-          </tbody>
-        </table>
+          </>
+        )}
       </div>
     </div>
   );

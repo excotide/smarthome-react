@@ -68,23 +68,29 @@ const LandingPage = () => {
             className="hero-content order-2 md:mt-18 md:col-span-2 text-center md:text-left"
           >
             <span className="text-zinc-300/50 sm:text-1xl/tight md:text-3xl/tight animate__animated animate__fadeInDown">
-              Smart Home
+              Amankan rumah dengan sistem
             </span>
             <h1 className="font-bold mt-3 md:mt-7 text-2xl md:text-5xl animate__animated animate__fadeInUp animate__delay-1s">
-              SMART HOME DASHBOARD
+              SMART HOME
             </h1>
             <p className="mt-3 md:mt-7 animate__animated animate__fadeInUp animate__delay-2s">
-              Pantau sensor (Api, Gas, Hujan, Cahaya) secara realtime, kendalikan lampu dalam mode otomatis atau manual, dan lihat riwayat perubahan dengan tampilan yang konsisten dan nyaman.
+              Pantau kondisi Api, Gas, Hujan dan Cahaya sekitar secara realtime, kendalikan lampu dalam mode otomatis atau manual, dan lihat riwayat perubahan dengan tampilan yang konsisten dan nyaman.
             </p>
             <div className="items-center justify-center flex mt-7 animate__animated animate__fadeInUp animate__delay-3s">
-              <Button name="Buka Dashboard" link="/" className="w-fit"/>
+              <button
+                onClick={() => {
+                  localStorage.setItem('loggedIn','true')
+                  window.dispatchEvent(new Event('auth:login'))
+                }}
+                className="hidden md:inline-block px-4 py-2 rounded-full border border-zinc-100/70 text-zinc-100 hover:bg-zinc-100/10 transition"
+              >Coba sekarang</button>
             </div>
           </div>
           <div
             className="flex text-center order-1 mt-18 md:mt-0 items-center justify-center"
           >
             <img
-              src="https://picsum.photos/seed/smarthome/200/300"
+              src="/logo_smarthome.png"
               alt="ilustrasi-smart-home"
               className="rounded-3xl w-32 xl:w-1/2 shadow-xl"
             />
@@ -104,14 +110,14 @@ const LandingPage = () => {
             <h2 className="text-2xl md:text-5xl font-bold text-right reveal-on-scroll opacity-0" data-delay="0s">Tentang Sistem</h2>
             <span className="text-zinc-300/50 text-center md:text-right sm:text-1xl/tight mt-7 md:text-3xl/tight reveal-on-scroll opacity-0" data-delay="0.15s">Smart Home berbasis IoT</span>
             <p className="mt-7 text-center md:text-right reveal-on-scroll opacity-0" data-delay="0.3s">
-              Sistem ini dibangun dengan React (front‑end), Node.js + Socket.IO (server), MQTT (HiveMQ Cloud), serta perangkat ESP8266 dan sensor BH1750/MQ‑2/Rain/Flame. Fokus pada keandalan realtime, kontrol manual/otomatis, dan riwayat yang rapi.
+              Sistem ini dibangun dengan React, Node.js dan Socket.IO untuk server, MQTT HiveMQ Cloud, serta perangkat ESP8266 dan sensor BH1750, MQ‑2, Rain, Flame. Fokus pada keandalan realtime, kontrol manual atau otomatis, dan riwayat yang rapi.
             </p>
             <div className="mt-7 md:text-right reveal-on-scroll opacity-0" data-delay="0.45s">
               <Button name="Dokumentasi Singkat" link="#project" />
             </div>
           </div>
           <div className="order-1 md:order-2 flex items-center justify-center mt-14">
-            <img src="https://picsum.photos/seed/iot/400/400" alt="ilustrasi-iot" className="rounded-3xl w-44 md:w-1/2 shadow-lg reveal-on-scroll opacity-0" data-delay="0.6s"/>
+            <img src="/illustration-1.png" alt="ilustrasi-iot" className="rounded-3xl w-44 md:w-1/2 shadow-lg reveal-on-scroll opacity-0" data-delay="0.6s"/>
           </div>
         </div>
       </section>
@@ -155,29 +161,29 @@ const LandingPage = () => {
             <div
               className="flex h-fit flex-col items-center min-w-[250px] md:min-w-[280px] snap-center"
             >
-              <img src="https://picsum.photos/seed/sensor/400/400" alt="monitoring-sensor" className="rounded-lg w-full max-w-[220px] shadow"/>
+              <img src="/test-1.png" alt="monitoring-sensor" className="rounded-lg w-full max-w-[220px] shadow"/>
               <p className="text-center mt-3 px-3 text-sm max-w-[200px] leading-relaxed">
-                Monitoring sensor realtime: Flame, MQ‑2 (gas/asap), Rain, dan tingkat cahaya (BH1750) dengan pembaruan langsung.
+                Monitoring sensor realtime: Api, Gas atau Asap, Hujan, dan tingkat cahaya dengan pembaruan langsung.
               </p>
-              <Button name="Lihat Detail" link="#" />
+              {/* <Button name="Lihat Detail" link="#" /> */}
             </div>
             <div
               className="flex h-fit flex-col items-center min-w-[250px] md:min-w-[280px] snap-center"
             >
               <img src="https://picsum.photos/seed/control/400/400" alt="kontrol-perangkat" className="rounded-lg w-full max-w-[220px] shadow"/>
               <p className="text-center mt-3 px-3 text-sm max-w-[200px] leading-relaxed">
-                Kontrol perangkat: mode otomatis/manual untuk lampu, status tersinkron lewat MQTT & Socket.IO.
+                Kontrol perangkat: mode otomatis atau manual untuk lampu, status tersinkron lewat MQTT & Socket.IO.
               </p>
-              <Button name="Lihat Detail" link="#" />
+              {/* <Button name="Lihat Detail" link="#" /> */}
             </div>
             <div
               className="flex h-fit flex-col items-center min-w-[250px] md:min-w-[280px] snap-center"
             >
               <img src="https://picsum.photos/seed/history/400/400" alt="riwayat-notifikasi" className="rounded-lg w-full max-w-[220px] shadow"/>
               <p className="text-center mt-3 px-3 text-sm max-w-[200px] leading-relaxed">
-                Riwayat & notifikasi: hanya perubahan bermakna yang dicatat, tampilan konsisten dan anti-spam.
+                Riwayat & notifikasi: Perubahan kondisi rumah akan dicatat, memberikan notifikasi secara langsung bahkan saat browser ditutup.
               </p>
-              <Button name="Lihat Detail" link="#" />
+              {/* <Button name="Lihat Detail" link="#" /> */}
             </div>
           </div>
         </div>
@@ -262,11 +268,11 @@ const LandingPage = () => {
               <Button as="submit" name="Kirim" className="mt-5"/>
             </div>
             <div className="p-7 w-1/2">
-              <h3 className="text-center mb-4">Sosial Media</h3>
+              <h3 className="text-center mb-4">Kreator</h3>
               <div className="flex flex-col text-center mx-auto space-y-3">
-                <Button name="Github" link="#" icon={<FaGithub />} />
-                <Button name="Instagram" link="#" icon={<FaInstagram />} />        
-                <Button name="Linkedin" link="#" icon={<FaLinkedin />}/>      
+                <Button name="Nafista" link="#" icon={<FaGithub />} />
+                <Button name="Aghisillah" link="#" icon={<FaGithub />} />        
+                <Button name="Labiq" link="#" icon={<FaGithub />}/>      
               </div>
             </div>
           </form>

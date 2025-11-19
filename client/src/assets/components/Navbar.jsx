@@ -13,7 +13,7 @@ const Navbar = ({ activeNav, setActiveNav, mobileMenuOpen, isDarkMode }) => {
           onClick={() => setActiveNav('sensor')}
         >
           <BarChart3 size={20} />
-          <span>Dashboard</span>
+          <span>Monitor</span>
         </button>
         <button
           className={`flex items-center gap-2 py-4 px-6 font-medium transition border-b-4 ${
@@ -24,7 +24,7 @@ const Navbar = ({ activeNav, setActiveNav, mobileMenuOpen, isDarkMode }) => {
           onClick={() => setActiveNav('control')}
         >
           <Settings size={20} />
-          <span>Control Panel</span>
+          <span>Panel Kontrol</span>
         </button>
         <button
           className={`flex items-center gap-2 py-4 px-6 font-medium transition border-b-4 ${
@@ -35,7 +35,7 @@ const Navbar = ({ activeNav, setActiveNav, mobileMenuOpen, isDarkMode }) => {
           onClick={() => setActiveNav('history')}
         >
           <Clock size={20} />
-          <span>History</span>
+          <span>Riwayat</span>
         </button>
         <button
           className={`flex items-center gap-2 py-4 px-6 font-medium transition border-b-4 ${
@@ -46,7 +46,7 @@ const Navbar = ({ activeNav, setActiveNav, mobileMenuOpen, isDarkMode }) => {
           onClick={() => setActiveNav('weather')}
         >
           <Clock size={20} />
-          <span>Weather Forecast</span>
+          <span>Prakiraan Cuaca</span>
         </button>
       </div>
     </nav>

@@ -16,11 +16,48 @@ mqttClient.on('connect', () => {
 
 // Variable untuk menyimpan status lampu
 let lampStatus = false;
+let autoLampEnabled = true; // status lampu otomatis (parent)
+
+// GET gabungan status lampu dan otomatis
+router.get('/state', (req, res) => {
+  res.json({ lampStatus, autoLampEnabled });
+});
+
+// GET status lampu otomatis
+router.get('/auto', (req, res) => {
+  res.json({ autoLampEnabled });
+});
+
+// SET status lampu otomatis
+router.post('/auto', (req, res) => {
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled boolean required' });
+  }
+  autoLampEnabled = enabled;
+  // Emit ke client
+  const io = req.io;
+  if (io) {
+    io.emit('auto_lamp_update', {
+      autoLampEnabled,
+      timestamp: new Date().toISOString()
+    });
+  }
+  // Publish ke MQTT agar perangkat bisa menyesuaikan (optional retain)
+  mqttClient.publish('arduino/lamp/auto', enabled ? 'AUTO_ON' : 'AUTO_OFF', { qos: 1, retain: true });
+  res.json({ success: true, autoLampEnabled });
+});
 
 // Endpoint untuk toggle lampu tetap dipertahankan
 router.post('/toggle', async (req, res) => {
   try {
     const { currentStatus } = req.body;
+    // Blok jika otomatis aktif
+    if (autoLampEnabled) {
+      return res.status(409).json({
+        error: 'Lampu otomatis aktif. Nonaktifkan terlebih dahulu untuk kontrol manual.'
+      });
+    }
     const newStatus = !currentStatus;
     lampStatus = newStatus;
 
@@ -58,6 +95,7 @@ router.post('/toggle', async (req, res) => {
 });
 
 // Endpoint untuk mengatur kontrol manual
+// Deprecated: manual control digantikan oleh lampu otomatis. Pertahankan sementara untuk kompatibilitas lama.
 router.post('/controlManual', (req, res) => {
   console.log('Endpoint /controlManual hit');
   const { command } = req.body; // command: "MANUAL_ON" atau "MANUAL_OFF"
@@ -85,6 +123,7 @@ router.post('/controlManual', (req, res) => {
 });
 
 // Alias agar mount di "/api/controlManual" langsung menembak endpoint ini
+// Deprecated alias
 router.post('/', (req, res) => {
   console.log('Endpoint / (alias controlManual) hit');
   const { command } = req.body; // command: "MANUAL_ON" atau "MANUAL_OFF"

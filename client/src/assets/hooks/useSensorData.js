@@ -15,7 +15,9 @@ const useSensorData = () => {
     temperature: 28.5,
     humidity: 65,
     lightLevel: 45,
-    gasDetected: false,
+    gasDetected: false, // true jika gas_status === 0 (bahaya)
+    gasStatusRaw: 1,    // nilai asli gas_status
+    mq2Raw: null,       // nilai analog mq2
     rainDetected: false,
     fireDetected: false,
     motionDetected: false,
@@ -43,13 +45,17 @@ const useSensorData = () => {
         const rainDetected = row.rain === 0;
         const fireDetected = row.flame === 0;
         const motionDetected = prev.motionDetected;
-        const gasDetected = row.mq2 === 0;
-
+        // Prefer gas_status (0 = bahaya) fallback ke konvensi lama mq2===0 jika belum tersedia
+        const hasGasStatus = row.gas_status !== undefined;
+        const gasStatusRaw = hasGasStatus ? Number(row.gas_status) : (row.mq2 === 0 ? 0 : 1);
+        const gasDetected = gasStatusRaw === 0;
+        const mq2Raw = typeof row.mq2 === 'number' ? row.mq2 : (typeof row.mq2_raw === 'number' ? row.mq2_raw : null);
         return {
           ...prev,
-          humidity: typeof row.mq2 === 'number' ? prev.humidity : prev.humidity,
           lightLevel: nextLight,
           gasDetected,
+          gasStatusRaw,
+          mq2Raw,
           rainDetected,
           fireDetected,
           motionDetected,
@@ -95,16 +101,25 @@ const useSensorData = () => {
       // Cleanup any existing connection first
       cleanupSocket();
 
-      // Initial data fetch
-      fetch(`${API_BASE}/api/sensors?limit=1`)
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Failed to fetch initial data'))))
-        .then((rows) => {
+      // Initial data fetch (sensor + gas endpoint untuk memastikan format baru)
+      Promise.all([
+        fetch(`${API_BASE}/api/sensors?limit=1`).then(r => r.ok ? r.json() : null),
+        fetch(`${API_BASE}/api/gas`).then(r => r.ok ? r.json() : null)
+      ])
+        .then(([rows, gasResp]) => {
           const latest = Array.isArray(rows) ? rows[0] : null;
           applyServerData(latest);
+          if (gasResp && gasResp.data) {
+            applyServerData({
+              mq2: gasResp.data.mq2,
+              gas_status: gasResp.data.gas_status,
+              flame: latest?.flame ?? 1,
+              rain: latest?.rain ?? 1,
+              lux: latest?.lux ?? 0
+            });
+          }
         })
-        .catch((err) => {
-          console.warn('[sensorData] initial fetch failed:', err?.message || err);
-        });
+        .catch((err) => console.warn('[sensorData] initial fetch failed:', err?.message || err));
 
       // Create new socket connection
       const socket = io(API_BASE, {
@@ -165,19 +180,20 @@ const useSensorData = () => {
         setSensorData((prev) => {
           const lux = typeof payload.lux === 'number' ? payload.lux : Number(payload.lux);
           const nextLight = luxToPercent(lux);
-          // Ikuti biner jika ikut terkirim, jika tidak, pertahankan sebelumnya
           const rainDetected = payload.rain != null ? Number(payload.rain) === 0 : prev.rainDetected;
           const fireDetected = payload.flame != null ? Number(payload.flame) === 0 : prev.fireDetected;
-          const gasDetected = payload.mq2 != null ? Number(payload.mq2) === 0 : prev.gasDetected;
-          const motionDetected = prev.motionDetected;
-
+          const hasGasStatus = payload.gas_status !== undefined;
+          const gasStatusRaw = hasGasStatus ? Number(payload.gas_status) : (payload.mq2 != null ? (Number(payload.mq2) === 0 ? 0 : 1) : prev.gasStatusRaw);
+          const gasDetected = gasStatusRaw === 0;
+          const mq2Raw = payload.mq2 != null ? Number(payload.mq2) : prev.mq2Raw;
           return {
             ...prev,
             lightLevel: nextLight,
             gasDetected,
+            gasStatusRaw,
+            mq2Raw,
             rainDetected,
             fireDetected,
-            // lampStatus di UI utama tetap berasal dari event khusus lamp_update atau logika lokal jika diperlukan
           };
         });
       });

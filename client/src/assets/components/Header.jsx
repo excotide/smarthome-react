@@ -34,7 +34,7 @@ const Header = ({ toggleDarkMode, darkMode, sensorData, mobileMenuOpen, setMobil
                 className={sensorData.connectionStatus ? 'icon-green' : 'icon-red'} 
               />
               <span className={`${darkMode ? 'text-slate-300' : 'text-gray-500'} text-sm hidden md:block`}>
-                {sensorData.connectionStatus ? 'Connected' : 'Disconnected'}
+                {sensorData.connectionStatus ? 'Tersambung' : 'Terputus'}
               </span>
             </div>
             <button

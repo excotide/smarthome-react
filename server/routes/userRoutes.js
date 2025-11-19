@@ -71,13 +71,44 @@ router.post('/login', async (req, res) => {
 // GET /api/users (dev helper): daftar user tanpa passwordHash
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find({}, '_id name email createdAt')
+    const users = await User.find({}, '_id name email createdAt pushSettings')
       .sort({ createdAt: -1 })
       .limit(50);
     return res.json(users);
   } catch (err) {
     console.error('List users error:', err);
     return res.status(500).json({ message: 'Gagal mengambil data users' });
+  }
+});
+
+// GET /api/users/:id/push-settings
+router.get('/:id/push-settings', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('pushSettings');
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+    return res.json(user.pushSettings || {});
+  } catch (err) {
+    console.error('Get push settings error:', err);
+    return res.status(500).json({ message: 'Gagal mengambil push settings' });
+  }
+});
+
+// PUT /api/users/:id/push-settings  { gas, flame, rain }
+router.put('/:id/push-settings', async (req, res) => {
+  try {
+    const { gas, flame, rain } = req.body || {};
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+    user.pushSettings = {
+      gas: typeof gas === 'boolean' ? gas : (user.pushSettings?.gas ?? true),
+      flame: typeof flame === 'boolean' ? flame : (user.pushSettings?.flame ?? true),
+      rain: typeof rain === 'boolean' ? rain : (user.pushSettings?.rain ?? false)
+    };
+    await user.save();
+    return res.json({ message: 'Push settings diperbarui', pushSettings: user.pushSettings });
+  } catch (err) {
+    console.error('Update push settings error:', err);
+    return res.status(500).json({ message: 'Gagal memperbarui push settings' });
   }
 });
 

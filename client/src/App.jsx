@@ -22,7 +22,7 @@ import useAlerts from './assets/hooks/useAlerts';
 function App() {
   const [darkMode, toggleDarkMode] = useDarkMode();
   const sensorData = useSensorData();
-  const alerts = useAlerts(sensorData);
+  const [alerts, setAlerts] = useAlerts(sensorData);
 
   const [activeNav, setActiveNav] = useState('sensor');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -89,7 +89,7 @@ function App() {
         isDarkMode={darkMode}
       />
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <AlertNotifications alerts={alerts} darkMode={darkMode} />
+        <AlertNotifications alerts={alerts} darkMode={darkMode} onClose={() => setAlerts([])} />
         {renderContent()}
       </main>
 

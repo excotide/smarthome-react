@@ -14,7 +14,7 @@ const Alert = ({ sensorData, darkMode }) => {
         } text-xl font-bold mb-6 flex items-center`}
       >
         <AlertTriangle className="mr-2 text-red-500" size={20} />
-        Rain Fire Alert System
+        Peringatan Cuaca Hujan
       </h2>
 
       <div>

@@ -14,7 +14,7 @@ const useAlerts = (sensorData) => {
     setAlerts(newAlerts);
   }, [sensorData.fireDetected, sensorData.gasDetected, sensorData.rainDetected]);
 
-  return alerts;
+  return [alerts, setAlerts];
 };
 
 export default useAlerts;

@@ -19,6 +19,15 @@ function Root() {
     return () => window.removeEventListener('auth:login', onLogin)
   }, [])
 
+  // Register service worker untuk push
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.warn('SW register gagal:', err)
+      })
+    }
+  }, [])
+
   return loggedIn ? <App /> : <LandingPage />
 }
 

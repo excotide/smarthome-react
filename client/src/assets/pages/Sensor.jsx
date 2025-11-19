@@ -10,14 +10,14 @@ const Sensor = ({ darkMode, sensorData }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatusCard
           title="Flame"
-          value={`${sensorData.fireDetected ? 'DETECTED' : 'CLEAR'}`}
+          value={`${sensorData.fireDetected ? 'TERDETEKSI' : 'AMAN'}`}
           icon={Flame}
           colorClass="red"
           isDark={darkMode}
         />
         <StatusCard
           title="Gas"
-          value={`${sensorData.gasDetected ? 'DETECTED' : 'CLEAR'}`}
+          value={`${sensorData.gasDetected ? 'TERDETEKSI' : 'AMAN'}`}
           icon={Wind}
           colorClass="blue"
           isDark={darkMode}
@@ -26,7 +26,7 @@ const Sensor = ({ darkMode, sensorData }) => {
           title="Tingkat Cahaya"
           value={`${sensorData.lightLevel.toFixed(0)}%`}
           icon={Activity}
-          status={sensorData.lightLevel < 30 ? 'LOW' : 'NORMAL'}
+          status={sensorData.lightLevel < 30 ? 'RENDAH' : 'NORMAL'}
           colorClass="yellow"
           isDark={darkMode}
         />
@@ -40,18 +40,18 @@ const Sensor = ({ darkMode, sensorData }) => {
         />
         <StatusCard
           title="Status Kipas"
-          value="Kipas Ruangan"
+          value="Kipas Exhaust"
           icon={Fan}
-          status={sensorData.fanStatus ? 'ON' : 'OFF'}
-          colorClass={sensorData.fanStatus ? 'green' : 'gray'}
+          status={sensorData.gasDetected ? 'ON' : 'OFF'}
+          colorClass={sensorData.gasDetected ? 'green' : 'gray'}
           isDark={darkMode}
         />
         <StatusCard
-          title="Pompa Air"
-          value="Water Pump"
+          title="Status Pompa"
+          value="Pompa Pemadan Api"
           icon={Droplets}
-          status={sensorData.pumpStatus ? 'ON' : 'OFF'}
-          colorClass={sensorData.pumpStatus ? 'green' : 'gray'}
+          status={sensorData.fireDetected ? 'ON' : 'OFF'}
+          colorClass={sensorData.fireDetected ? 'green' : 'gray'}
           isDark={darkMode}
         />
       </div>
