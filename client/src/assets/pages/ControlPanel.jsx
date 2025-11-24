@@ -108,7 +108,7 @@ const ControlPanel = ({ sensorData, darkMode }) => {
             <div className="item-info flex items-center gap-3">
               <Lightbulb
                 size={24}
-                className={lampStatus ? 'text-yellow-400' : 'text-gray-400'}
+                className={lampStatus ? 'text-gray-400' : 'text-yellow-400'}
               />
               <div>
                 <h3 className={`font-medium ${
@@ -119,7 +119,7 @@ const ControlPanel = ({ sensorData, darkMode }) => {
                 <p className={`text-sm ${
                   darkMode ? 'text-slate-200' : 'text-gray-500'
                 }`}>
-                  {lampStatus ? 'Menyala' : 'Mati'}
+                  {lampStatus ? 'Mati' : 'Menyala'}
                 </p>
               </div>
             </div>
@@ -128,14 +128,14 @@ const ControlPanel = ({ sensorData, darkMode }) => {
               disabled={isToggling}
               className={`toggle-switch ${
                 lampStatus
-                  ? 'bg-indigo-600'
-                  : 'bg-gray-300'
+                  ? 'bg-gray-300'
+                  : 'bg-indigo-600'
               } relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer border-0 ${
                 isToggling ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               <span className={`${
-                lampStatus ? 'translate-x-5' : 'translate-x-1'
+                lampStatus ? 'translate-x-1' : 'translate-x-5'
               } inline-block h-4 w-4 rounded-full bg-white transition-transform`} />
               
               {/* Loading indicator */}

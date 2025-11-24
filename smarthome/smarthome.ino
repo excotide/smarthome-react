@@ -14,7 +14,7 @@ const char* mqttUser = "excotide"; // Ganti dengan username HiveMQ Anda
 const char* mqttPassword = "Smarthome123"; // Ganti dengan password HiveMQ Anda
 
 WiFiClientSecure espClient; // Gunakan WiFiClientSecure untuk TLS/SSL
-PubSubClient client(espClient); 
+PubSubClient client(espClient);   
 
 // ===== Pin Sensor =====
 const int flamePin   = D5;   // Flame sensor DO
