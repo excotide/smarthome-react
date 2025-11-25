@@ -1,222 +1,177 @@
-#include <Wire.h>
-#include <BH1750.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <Wire.h>
+#include <BH1750.h>
 
-// ===== WiFi Config =====
-const char* ssid     = "testing";       // Ganti dengan SSID Wi-Fi Anda
-const char* password = "12345678";     // Ganti dengan password Wi-Fi Anda
+// ------------ PIN SETUP -------------
+#define MQ2_PIN       A0
+#define FLAME_PIN     D5
+#define RAIN_PIN      D7
+#define BUZZER_PIN    D8
+#define LED_RAIN      D3
+#define LED_LAMPU     D4
+#define FAN_PIN       D6       // Kipas
+#define PUMP_PIN      D0       // Pompa pemadam api
 
-// ===== MQTT Config =====
-const char* mqttServer = "48378e59b49d4cfeadc19503175e8732.s1.eu.hivemq.cloud"; // HiveMQ broker
-const int mqttPort = 8883; // Port TLS/SSL
-const char* mqttUser = "excotide"; // Ganti dengan username HiveMQ Anda
-const char* mqttPassword = "Smarthome123"; // Ganti dengan password HiveMQ Anda
-
-WiFiClientSecure espClient; // Gunakan WiFiClientSecure untuk TLS/SSL
-PubSubClient client(espClient);   
-
-// ===== Pin Sensor =====
-const int flamePin   = D5;   // Flame sensor DO
-const int mq2Pin     = D6;   // MQ-2 sensor DO
-const int rainPin    = D7;   // Rain Drop sensor DO
-const int buzzerPin  = D8;   // Buzzer
-const int rainLedPin = D3;   // LED indikator hujan
-const int lampLedPin = D4;   // LED lampu otomatis
-
-// ===== BH1750 =====
+// ------------ BH1750 -------------
 BH1750 lightMeter;
-const int lightThreshold = 50; // Lux threshold (gelap < 50 lux)
 
-// Status kontrol manual (false = otomatis, true = manual)
-bool controlManual = false; 
-// Waktu mengaktifkan mode manual (untuk menghindari race perintah lamp)
-unsigned long manualActivatedAt = 0; 
+const int MQ2_THRESHOLD = 500; // Ambang bahaya gas untuk MQ2;
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-  Serial.print("Pesan diterima di topik: ");
-  Serial.println(topic);
-  Serial.print("Isi pesan: ");
-  Serial.println(message);
+// ------------ WIFI & MQTT -------------
+const char* ssid = "testing";
+const char* password = "12345678";
 
-  // Logika untuk kontrol manual
-  if (String(topic) == "arduino/controlManual") {
-    if (message == "MANUAL_ON") {
-      controlManual = true; // Aktifkan kontrol manual
-      Serial.println("Kontrol manual diaktifkan!");
-      // Default aman: matikan lampu saat masuk mode manual
-      digitalWrite(lampLedPin, LOW);
-      client.publish("arduino/lamp/state", "OFF", true);
-      client.publish("arduino/controlManual/state", "ON", true);
-      manualActivatedAt = millis();
-    } else if (message == "MANUAL_OFF") {
-      controlManual = false; // Nonaktifkan kontrol manual
-      Serial.println("Kontrol manual dinonaktifkan!");
-      client.publish("arduino/controlManual/state", "OFF", true);
-    }
-  }
+const char* mqtt_server = "48378e59b49d4cfeadc19503175e8732.s1.eu.hivemq.cloud"; // HiveMQ Cloud hostname
+const int mqtt_port = 8883; // TLS port wajib untuk HiveMQ Cloud
+const char* mqttUser = "excotide";
+const char* mqttPassword = "Smarthome123";
 
-  // Logika untuk menyalakan/mematikan lampu
-  if (String(topic) == "arduino/lamp" && controlManual) { // Hanya jika kontrol manual aktif
-    // Hindari perintah lampu yang datang terlambat tepat setelah beralih ke manual
-    if (millis() - manualActivatedAt < 500) {
-      Serial.println("Abaikan perintah lampu (grace period setelah MANUAL_ON)");
-      return;
-    }
-    if (message == "LAMP_ON") {
-      digitalWrite(lampLedPin, HIGH); // Nyalakan lampu
-      Serial.println("Lampu dinyalakan secara manual!");
-      client.publish("arduino/lamp/state", "ON", true);
-    } else if (message == "LAMP_OFF") {
-      digitalWrite(lampLedPin, LOW); // Matikan lampu
-      Serial.println("Lampu dimatikan secara manual!");
-      client.publish("arduino/lamp/state", "OFF", true);
-    }
-  }
-}
+// Gunakan TLS client untuk koneksi aman ke HiveMQ Cloud
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
 
-// Fungsi untuk menghubungkan ke Wi-Fi
-void connectWiFi() {
+// ------------ SETUP WIFI -------------
+void setup_wifi() {
+  delay(100);
+  Serial.println("Menghubungkan ke WiFi...");
   WiFi.begin(ssid, password);
-  Serial.print("🔗 Menghubungkan ke WiFi");
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\n✅ WiFi Terkoneksi!");
+
+  Serial.println("\nWiFi Connected!");
   Serial.println(WiFi.localIP());
 }
 
-// Fungsi untuk menghubungkan ke broker MQTT
-void connectMQTT() {
+// ------------ MQTT RECONNECT -------------
+void reconnect() {
   while (!client.connected()) {
-    Serial.println("🔗 Menghubungkan ke broker MQTT...");
-    if (client.connect("ArduinoClient", mqttUser, mqttPassword)) {
-      Serial.println("✅ Terhubung ke broker MQTT!");
-      client.subscribe("arduino/lamp"); // Berlangganan ke topik untuk kontrol lampu
-      client.subscribe("arduino/controlManual"); // Berlangganan ke topik untuk kontrol manual
-      // Publikasikan state awal (retained) agar backend/klien langsung sinkron
-      client.publish("arduino/controlManual/state", controlManual ? "ON" : "OFF", true);
-      client.publish("arduino/lamp/state", digitalRead(lampLedPin) == HIGH ? "ON" : "OFF", true);
+    Serial.print("Menghubungkan ke MQTT...");
+    // Gunakan clientId unik agar tidak saling tendang jika ada perangkat lain
+    String clientId = String("ESP8266_") + String(ESP.getChipId(), HEX);
+    if (client.connect(clientId.c_str(), mqttUser, mqttPassword)) {
+      Serial.println("Connected!");
     } else {
-      Serial.print("❌ Gagal terhubung. State: ");
+      Serial.print("Gagal, rc = ");
       Serial.println(client.state());
-      delay(2000);
+      delay(3000);
     }
   }
 }
 
+// ------------ SETUP -------------
 void setup() {
   Serial.begin(115200);
-  connectWiFi();
 
-  // Konfigurasi MQTT
-  espClient.setInsecure(); // Nonaktifkan verifikasi sertifikat (untuk HiveMQ Free Plan)
-  client.setServer(mqttServer, mqttPort);
-  client.setCallback(callback); // Set callback untuk menerima pesan
+  pinMode(FLAME_PIN, INPUT_PULLUP);
+  pinMode(RAIN_PIN, INPUT_PULLUP);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_RAIN, OUTPUT);
+  pinMode(LED_LAMPU, OUTPUT);
+  pinMode(FAN_PIN, OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
 
-  // Inisialisasi pin
-  pinMode(flamePin, INPUT);
-  pinMode(mq2Pin, INPUT);
-  pinMode(rainPin, INPUT);
-  pinMode(buzzerPin, OUTPUT);
-  pinMode(rainLedPin, OUTPUT);
-  pinMode(lampLedPin, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(FAN_PIN, LOW);
+  digitalWrite(PUMP_PIN, LOW);
 
-  noTone(buzzerPin);
-  digitalWrite(rainLedPin, LOW);
-  digitalWrite(lampLedPin, LOW);
+  setup_wifi();
+  // Konfigurasi TLS (accept-all). Untuk produksi, sebaiknya gunakan root CA.
+  espClient.setInsecure();
+  // SNI akan di-set otomatis dengan hostname ketika PubSubClient melakukan koneksi
 
-  // Inisialisasi sensor cahaya
-  Wire.begin(D2, D1);  // SDA = D2, SCL = D1
-  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23)) {
-    Serial.println("🌞 BH1750 siap digunakan...");
+  client.setServer(mqtt_server, mqtt_port);
+  client.setKeepAlive(30);
+  client.setBufferSize(1024);
+
+  // Inisialisasi I2C & BH1750
+  Wire.begin();
+  if (lightMeter.begin()) {
+    Serial.println("BH1750 Siap");
   } else {
-    Serial.println("⚠ BH1750 tidak terdeteksi!");
+    Serial.println("Gagal menginisialisasi BH1750!");
   }
 
-  Serial.println("🔥 Flame + MQ-2 + Rain Drop + LED + BH1750 siap...");
+  // MQ2 preheat
+  Serial.println("Memanaskan MQ2 (20 detik)...");
+  delay(20000);
+  Serial.println("MQ2 Siap!");
 }
 
+// ------------ LOOP -------------
 void loop() {
-  // Pastikan terhubung ke MQTT
   if (!client.connected()) {
-    connectMQTT();
+    reconnect();
   }
-  client.loop(); // Proses pesan MQTT
+  client.loop();
 
-  // Baca sensor
-  int flameState = digitalRead(flamePin);
-  int mq2State   = digitalRead(mq2Pin);
-  int rainState  = digitalRead(rainPin);
-  float lux      = lightMeter.readLightLevel();
+  // ==============================
+  // BACA SENSOR
+  // ==============================
 
-  // Deteksi perubahan mode kontrol manual -> auto, dan sinkronkan lampu sesuai lux
-  static bool prevControlManual = controlManual;
-  static bool lastLampAuto = false; // jejak status auto terakhir yang dipublish
-  if (prevControlManual != controlManual) {
-    if (!controlManual) {
-      // Baru beralih ke mode otomatis: paksa setel lampu sesuai lux saat ini
-      bool shouldOnNow = lux < lightThreshold;
-      digitalWrite(lampLedPin, shouldOnNow ? HIGH : LOW);
-      client.publish("arduino/lamp/state", shouldOnNow ? "ON" : "OFF", true);
-      lastLampAuto = shouldOnNow;
-      Serial.println("Mode otomatis aktif kembali, sinkronkan lampu sesuai lux.");
-    }
-    prevControlManual = controlManual;
-  }
+  int mq2 = analogRead(MQ2_PIN);        // MQ2 analog
+  int flame = digitalRead(FLAME_PIN);   // Flame (LOW = api terdeteksi)
+  int rain = digitalRead(RAIN_PIN);     // Rain
+  float lux = lightMeter.readLightLevel();  // BH1750
 
-  // 🌙 Lampu otomatis
-  if (!controlManual) { // Hanya aktif jika kontrol manual tidak aktif
-    bool shouldOn = lux < lightThreshold;
-    if (shouldOn != lastLampAuto) {
-      digitalWrite(lampLedPin, shouldOn ? HIGH : LOW);
-      Serial.println(shouldOn ? "Lampu dinyalakan secara otomatis!" : "Lampu dimatikan secara otomatis!");
-      client.publish("arduino/lamp/state", shouldOn ? "ON" : "OFF", true);
-      lastLampAuto = shouldOn;
-    }
-  }
+  // ==============================
+  // LOGIKA GAS + KIPAS
+  // ==============================
 
-  // 🚨 Alarm fisik (prioritas api/gas)
-  if (flameState == LOW || mq2State == LOW) {
-    for (int i = 0; i < 3; i++) {
-      tone(buzzerPin, 1000);
-      digitalWrite(rainLedPin, HIGH);
-      delay(300);
-      noTone(buzzerPin);
-      digitalWrite(rainLedPin, LOW);
-      delay(200);
-    }
-  } else if (rainState == LOW) {
-    digitalWrite(rainLedPin, HIGH);
-    tone(buzzerPin, 1000);
-    delay(200);
-    noTone(buzzerPin);
-    digitalWrite(rainLedPin, LOW);
-    delay(200);
+  int gasStatus;  // 1 = aman, 0 = bahaya
+
+  // Dibalik: nilai lebih kecil => gas/asap terdeteksi
+  if (mq2 < MQ2_THRESHOLD) {
+    gasStatus = 0;                 // bahaya/terdeteksi
+    digitalWrite(BUZZER_PIN, HIGH);
+    digitalWrite(FAN_PIN, HIGH);   // Kipas ON
   } else {
-    noTone(buzzerPin);
-    digitalWrite(rainLedPin, LOW);
+    gasStatus = 1;                 // aman
+    digitalWrite(FAN_PIN, LOW);    // Kipas OFF
+    digitalWrite(BUZZER_PIN, LOW);
   }
 
-  // === Kirim data ke broker MQTT ===
-  String jsonPayload = "{";
-  jsonPayload += "\"flame\":" + String(flameState) + ",";
-  jsonPayload += "\"mq2\":"   + String(mq2State) + ",";
-  jsonPayload += "\"rain\":"  + String(rainState) + ",";
-  jsonPayload += "\"lux\":"   + String(lux, 2);
-  jsonPayload += "}";
+  // ==============================
+  // LOGIKA API + POMPA
+  // ==============================
 
-  // Publish data ke topik MQTT
-  if (client.publish("arduino/sensors", jsonPayload.c_str())) {
-    Serial.println("✅ Data terkirim ke broker MQTT!");
+  if (flame == LOW) { // Terdeteksi api
+    digitalWrite(PUMP_PIN, HIGH);  // Pompa ON
+    digitalWrite(BUZZER_PIN, HIGH);
   } else {
-    Serial.println("❌ Gagal mengirim data ke broker MQTT!");
+    digitalWrite(PUMP_PIN, LOW);
   }
 
-  delay(1000); // Kirim setiap 1 detik
+  // ==============================
+  // LOGIKA HUJAN
+  // ==============================
+
+  digitalWrite(LED_RAIN, rain == LOW ? HIGH : LOW);
+
+  // ==============================
+  // LAMPU OTOMATIS BH1750
+  // ==============================
+
+  digitalWrite(LED_LAMPU, lux < 50 ? HIGH : LOW);
+
+  // ==============================
+  // KIRIM DATA KE MQTT
+  // ==============================
+
+  String payload = "{";
+  payload += "\"mq2_raw\":" + String(mq2) + ",";
+  payload += "\"gas_status\":" + String(gasStatus) + ",";
+  payload += "\"flame\":" + String(flame) + ",";
+  payload += "\"rain\":" + String(rain) + ",";
+  payload += "\"lux\":" + String(lux);
+  payload += "}";
+
+  client.publish("esp/data", payload.c_str());
+
+  Serial.println(payload);
+
+  delay(800);
 }
